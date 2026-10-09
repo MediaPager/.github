@@ -6,39 +6,13 @@
 </p>
 
 MediaPager brings your media library together with extensible search, metadata, playback,
-subtitle, and email providers. Its modular design keeps provider integrations in plugins,
-so the application can grow without tying the host or interface to a single service.
+subtitle, and email providers. It combines an ASP.NET Core API, a Vue 3 + Quasar web app,
+and a plugin SDK for official and community extensions.
 
-## The platform
+## Quick start
 
-- **API:** ASP.NET Core on .NET 10, with authentication, persistence, and plugin hosting.
-- **Web app:** Vue 3 + Quasar single-page application.
-- **Plugin SDK:** Shared contracts for stream, search, metadata, subtitles, email, actions,
-  and interface capabilities.
-- **Extensible catalog:** Official plugins ship with MediaPager; community plugins can be
-  discovered and installed through the application.
-- **Self-hosted:** Run the API and web app locally or deploy the provided Docker images.
-
-## Projects
-
-| Project | Description |
-|---|---|
-| [MediaPager](https://github.com/MediaPager/MediaPager) | Superproject, .NET solution, deployment files, and development guide. |
-| [MediaPager.App.Api](https://github.com/MediaPager/MediaPager.App.Api) | API host, accounts, data, and plugin lifecycle. |
-| [MediaPager.App.Core](https://github.com/MediaPager/MediaPager.App.Core) | Domain services, plugin registry, and shared infrastructure. |
-| [MediaPager.App.PluginContracts](https://github.com/MediaPager/MediaPager.App.PluginContracts) | SDK interfaces and data contracts for plugins. |
-| [MediaPager.App.Ui](https://github.com/MediaPager/MediaPager.App.Ui) | Vue 3 + Quasar web client. |
-| [MediaPager.Plugins.Stream.Local](https://github.com/MediaPager/MediaPager.Plugins.Stream.Local) | Local catalog playback. |
-| [MediaPager.Plugins.Search.Local](https://github.com/MediaPager/MediaPager.Plugins.Search.Local) | Search across the local library. |
-| [MediaPager.Plugins.Search.Tmdb](https://github.com/MediaPager/MediaPager.Plugins.Search.Tmdb) | TMDB metadata and search. |
-| [MediaPager.Plugins.Subtitles.OpenSubtitles](https://github.com/MediaPager/MediaPager.Plugins.Subtitles.OpenSubtitles) | OpenSubtitles integration. |
-| [MediaPager.Plugins.Subtitles.Subdl](https://github.com/MediaPager/MediaPager.Plugins.Subtitles.Subdl) | Subdl integration. |
-| [MediaPager.Plugins.Email.Smtp](https://github.com/MediaPager/MediaPager.Plugins.Email.Smtp) | SMTP email delivery. |
-| [MediaPager.Plugins.Email.MailGun](https://github.com/MediaPager/MediaPager.Plugins.Email.MailGun) | Mailgun email delivery. |
-
-## Get started
-
-Clone the superproject and all component repositories:
+Install Git, the .NET 10 SDK, Node.js 24, and npm, then clone the superproject with its
+component repositories:
 
 ```sh
 git clone --recurse-submodules https://github.com/MediaPager/MediaPager.git
@@ -46,7 +20,7 @@ cd MediaPager
 dotnet build MediaPager.slnx
 ```
 
-Run the API and web application in separate terminals:
+Run the API and web app in separate terminals:
 
 ```sh
 dotnet run --project MediaPager.App.Api/MediaPager.App.Api.csproj
@@ -58,19 +32,76 @@ npm ci
 npm run dev
 ```
 
-The API defaults to `http://localhost:5074`; the development web app defaults to
+The API defaults to `http://localhost:5074`; the UI defaults to
 `http://localhost:5173`. On first startup, a temporary password for
 `admin@mediapager.local` is printed in the API log. Change it after signing in.
 
-See the [superproject README](https://github.com/MediaPager/MediaPager#readme) for
-requirements, configuration, Docker deployment, and plugin architecture.
+## Environment variables
+
+This is a compact variable-name reference; the
+[superproject README](https://github.com/MediaPager/MediaPager#environment-variables-and-configuration)
+documents defaults, precedence, and deployment details. The API accepts `MEDIAPAGER_`-prefixed
+configuration keys; use `__` between nested key segments. For example,
+`MEDIAPAGER_Plugins__Directory` maps to `Plugins:Directory`.
+
+- **UI:** `VITE_API_BASE_URL` (development default `http://localhost:5074`; production
+  default `/`; runtime `runtime-config.json` can override it).
+- **Database:** `MEDIAPAGER_DB_PATH`.
+- **Authentication:** `MEDIAPAGER_SEED_USER`, `MEDIAPAGER_SEED_PASS`, `MEDIAPAGER_EKEY`.
+- **Host/runtime settings:** `MEDIAPAGER_Frontend__BaseUrl`, `MEDIAPAGER_Email__Provider`,
+  `MEDIAPAGER_Subtitles__Provider`, `MEDIAPAGER_Artwork__Directory`,
+  `MEDIAPAGER_Plugins__Directory`, `MEDIAPAGER_Plugins__Required__Official__<index>`,
+  `MEDIAPAGER_Plugins__Required__Community__<index>`, `MEDIAPAGER_AllowedHosts`,
+  `MEDIAPAGER_Logging__LogLevel__Default`. The `MEDIAPAGER_` prefix can override any appsettings
+  key; nested key segments use `__`.
+- **Provider settings:** `MEDIAPAGER_TMDB_API_KEY`, `MEDIAPAGER_plugins__tmdb__imageBase`,
+  `MEDIAPAGER_plugins__opensubtitles__apiKey`, `MEDIAPAGER_plugins__opensubtitles__username`,
+  `MEDIAPAGER_plugins__opensubtitles__password`, `MEDIAPAGER_plugins__subdl__apiKey`,
+  `MEDIAPAGER_plugins__smtp__host`, `MEDIAPAGER_plugins__smtp__port`,
+  `MEDIAPAGER_plugins__smtp__username`, `MEDIAPAGER_plugins__smtp__password`,
+  `MEDIAPAGER_plugins__smtp__from`, `MEDIAPAGER_plugins__smtp__enableSsl`,
+  `MEDIAPAGER_plugins__mailgun__apiKey`, `MEDIAPAGER_plugins__mailgun__domain`,
+  `MEDIAPAGER_plugins__mailgun__from`, `MEDIAPAGER_plugins__mailgun__apiBaseUrl`.
+  Community plugin settings use the same dynamic
+  `MEDIAPAGER_plugins__<pluginKey>__<setting>` pattern.
+- **Private plugin installation:** `MEDIAPAGER_GIT_SSH_PRIVATE_KEY_PATH` points to a
+  mounted deploy key; public HTTPS repositories need no key.
+- **.NET/Docker runtime:** `ASPNETCORE_ENVIRONMENT`, `DOTNET_ENVIRONMENT`,
+  `ASPNETCORE_URLS`, `PLAYWRIGHT_BROWSERS_PATH`. The Docker image sets
+  `ASPNETCORE_URLS=http://0.0.0.0:5000` and `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`.
+- **OS profile defaults:** `APPDATA` on Windows and `HOME`/the user profile on
+  macOS/Linux affect the default database and plugin directories.
+- **Compose `.env`:** `MEDIAPAGER_QNET_NETWORK`, `MEDIAPAGER_WEB_IP`, `MEDIAPAGER_DATA_DIR`,
+  `MEDIAPAGER_MOVIES_DIR`. Optional external Watchtower/Docker tooling:
+  `DOCKER_CONFIG`, `WATCHTOWER_POLL_INTERVAL` (not consumed by the supplied Compose
+  services).
+
+`MEDIAPAGER_EKEY` is the API's JWT signing key (minimum 32 bytes); it is not used to encrypt
+the database. `MEDIAPAGER_SEED_USER` is an email/login used only when creating the first
+super-admin; `MEDIAPAGER_SEED_PASS` sets that account's initial password. The TMDB API key
+saved in plugin settings takes precedence over `MEDIAPAGER_TMDB_API_KEY`.
+
+Settings saved in the application database take precedence over environment fallbacks.
+Never put secret values in the public organization profile or source files.
+
+## Projects
+
+- **Application:** [API](https://github.com/MediaPager/MediaPager.App.Api) ·
+  [Core](https://github.com/MediaPager/MediaPager.App.Core) ·
+  [Plugin SDK](https://github.com/MediaPager/MediaPager.App.PluginContracts) ·
+  [Web UI](https://github.com/MediaPager/MediaPager.App.Ui)
+- **Official plugins:** [Local stream](https://github.com/MediaPager/MediaPager.Plugins.Stream.Local) ·
+  [Local search](https://github.com/MediaPager/MediaPager.Plugins.Search.Local) ·
+  [TMDB](https://github.com/MediaPager/MediaPager.Plugins.Search.Tmdb) ·
+  [OpenSubtitles](https://github.com/MediaPager/MediaPager.Plugins.Subtitles.OpenSubtitles) ·
+  [Subdl](https://github.com/MediaPager/MediaPager.Plugins.Subtitles.Subdl) ·
+  [SMTP](https://github.com/MediaPager/MediaPager.Plugins.Email.Smtp) ·
+  [Mailgun](https://github.com/MediaPager/MediaPager.Plugins.Email.MailGun)
 
 ## Community plugins
 
-Community plugins are independent GitHub repositories named
-`MediaPager.Plugins.<Type>.<Name>`. A matching repository-root manifest declares its
-capabilities and SDK compatibility. MediaPager validates the manifest during discovery
-and again during installation. Start with the
-[plugin contracts](https://github.com/MediaPager/MediaPager.App.PluginContracts) and use
-the [MediaPager organization](https://github.com/MediaPager) for official project
-repositories.
+Community extensions use independent GitHub repositories named
+`MediaPager.Plugins.<Type>.<Name>` and include a matching root manifest declaring their
+capabilities and SDK compatibility. See the
+[superproject README](https://github.com/MediaPager/MediaPager#plugin-development-and-discovery)
+for development, configuration, and container deployment details.

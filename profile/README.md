@@ -21,7 +21,8 @@ docker compose up -d
 
 MediaPager runs from one Docker Hub image at **http://localhost:8080**. Compose creates the
 network and persistent volumes automatically; no separate API/web containers or pre-existing
-network are required. Use `MEDIAPAGER_MEDIA_PATH` to mount your media folder. On first run,
+network are required. Use `MEDIAPAGER_MEDIA_PATH` to mount your media folder at `/mnt/media`;
+create catalogs using container paths such as `/mnt/media/Movies`, not the host path. On first run,
 get the temporary admin password with `docker compose logs mediapager` and sign in as
 `admin@mediapager.local` unless you set `MEDIAPAGER_SEED_USER`.
 

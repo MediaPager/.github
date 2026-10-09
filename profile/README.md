@@ -26,6 +26,16 @@ create catalogs using container paths such as `/mnt/media/Movies`, not the host 
 get the temporary admin password with `docker compose logs mediapager` and sign in as
 `admin@mediapager.local` unless you set `MEDIAPAGER_SEED_USER`.
 
+To run the image directly without cloning the repository:
+
+```sh
+docker pull mediapager/mediapager:latest
+docker run -d --name mediapager --restart unless-stopped -p 8080:5000 \
+  -v mediapager-data:/data \
+  -v mediapager-community-plugins:/app/plugins/community \
+  -v "$PWD/media:/mnt/media:ro" mediapager/mediapager:latest
+```
+
 For local source development, see the
 [superproject README](https://github.com/MediaPager/MediaPager#requirements-and-clone).
 
